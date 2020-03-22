@@ -13,5 +13,11 @@
 
 * Windows 10
 * Installed Windows English Language Pack
-* Installed Windows Japanese Language Pack
+* Installed Windows Japanese Language Pack  
+  
+  
+## Build System Requirements  
+
+* Windows 10
+* UWP API
 
