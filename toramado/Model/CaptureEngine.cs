@@ -35,32 +35,39 @@ using UwpInMemoryRandomAccessStream = Windows.Storage.Streams.InMemoryRandomAcce
 using UwpDataWriter = Windows.Storage.Streams.DataWriter;
 
 
+/// <summary>
+/// キャプチャ関数コレクション
+/// </summary>
 public class Capture
 {
+    /// <summary>
+    /// 指定範囲のキャプチャ画像をSoftwareBitmap型として得る
+    /// </summary>
+    /// <param name="left">キャプチャ範囲の左端端x座標</param>
+    /// <param name="top">キャプチャ範囲の左端端y座標</param>
+    /// <param name="height">キャプチャ範囲の高さ</param>
+    /// <param name="width">キャプチャ範囲の幅</param>
+    /// <returns>指定された範囲のキャプチャ画像</returns>
     public static async Task<SoftwareBitmap> CaptureAsSoftwareBitmap(int left, int top, int height, int width)
     {
-        /**
-        left = (int)Application.Current.MainWindow.Left;
-        top = (int)Application.Current.MainWindow.Top;
-        height = (int)Application.Current.MainWindow.Height;
-        width = (int)Application.Current.MainWindow.Width;
-        **/
-        //Bitmapの作成
-        Bitmap partial_capture = new Bitmap(width, height); /// - 3, - 57
-        //Graphicsの作成
-        Graphics g = Graphics.FromImage(partial_capture);
-        //画面全体をコピーする
-        g.CopyFromScreen(
-            left,/// + 1
-            top, /// + 27
-            0, 0,
-            partial_capture.Size
-        );
-        //解放
-        g.Dispose();
+        //ビットマップの保持領域を確保
+        Bitmap partialCapture = new Bitmap(width, height);
+        //描画インターフェイスの設定
+        Graphics draw = Graphics.FromImage(partialCapture);
 
-        MemoryStream ms = new MemoryStream();
-        partial_capture.Save(ms, ImageFormat.Bmp);
+        //画面全体をコピーする
+        draw.CopyFromScreen(
+            left,
+            top,
+            0, 0,
+            partialCapture.Size
+        );
+
+        //解放
+        draw.Dispose();
+
+        MemoryStream memStream = new MemoryStream();
+        partialCapture.Save(memStream, ImageFormat.Bmp);
 
         SoftwareBitmap softwareBitmap;
 
@@ -69,7 +76,7 @@ public class Capture
             using (var outputStream = randomAccessStream.GetOutputStreamAt(0))
             using (var writer = new UwpDataWriter(outputStream))
             {
-                writer.WriteBytes(ms.ToArray());
+                writer.WriteBytes(memStream.ToArray());
                 await writer.StoreAsync();
                 await outputStream.FlushAsync();
             }
@@ -81,6 +88,5 @@ public class Capture
         }
 
         return softwareBitmap;
-        ///await RecognizeBitmapAsync(softwareBitmap);
     }
 }
