@@ -41,19 +41,28 @@ using UwpBitmapAlphaMode = Windows.Graphics.Imaging.BitmapAlphaMode;
 using UwpInMemoryRandomAccessStream = Windows.Storage.Streams.InMemoryRandomAccessStream;
 using UwpDataWriter = Windows.Storage.Streams.DataWriter;
 
+
 namespace toramado
+
 {
+    /// <summary>
+    ///  エントリ・ポイント・クラス（キャプチャウィンドウについてのロジック）
+    /// </summary>
     public sealed class SubViewModel : INotifyPropertyChanged
     {
         public delegate void GetWindowPositionDelegate(out int left, out int top, out int height, out int width);
         public GetWindowPositionDelegate GetWindowPosition;
+        private SoftwareBitmap capturedImage;
 
+        /// <summary>
+        /// サブ（メイン2）・エントリ・ポイント
+        /// </summary>
         public SubViewModel()
         {
             ScreenOCRCommand = new ReturnableAsyncCommand(
                 async () => 
                 {
-                    if (null == _selected_item) {
+                    if (null == _selectedItem) {
                         Info = "検出言語を選択してください";
 
                         return;
@@ -61,20 +70,21 @@ namespace toramado
 
                     GetWindowPosition(out int left, out int top, out int height, out int width);
 
-                    App._main_view_model.OCRedText = await OCR.ScreenOCR(
-                        (int)(left), 
-                        (int)(top), 
+                    capturedImage = await Capture.CaptureAsSoftwareBitmap(
+                        (int)(left),
+                        (int)(top),
                         (int)(height - 20), //メニューバー分を引いている
-                        (int)(width), 
-                        SelectedItem as UwpLanguage
+                        (int)(width)
                     );
+
+                    App._main_view_model.recognizedText = await OCR.UwpOcrEngineWithPostProcessing(capturedImage, SelectedItem as UwpLanguage);
                 }
             );
 
             QuickTranslationCommand = new ReturnableAsyncCommand(
                 async () =>
                 {
-                    if (null == _selected_item) {
+                    if (null == _selectedItem) {
                         Info = "検出言語を選択してください";
 
                         return;
@@ -82,15 +92,16 @@ namespace toramado
 
                     GetWindowPosition(out int left, out int top, out int height, out int width);
 
-                    App._main_view_model.OCRedText = await OCR.ScreenOCR(
+                    capturedImage = await Capture.CaptureAsSoftwareBitmap(
                         (int)(left),
                         (int)(top),
-                        (int)(height - 20),
-                        (int)(width),
-                        SelectedItem as UwpLanguage
+                        (int)(height - 20), //メニューバー分を引いている
+                        (int)(width)
                     );
 
-                    App._main_view_model.TranslatedText = await Translation.OnlineGoogleTranslation(App._main_view_model.OCRedText);
+                    App._main_view_model.recognizedText = await OCR.UwpOcrEngineWithPostProcessing(capturedImage, SelectedItem as UwpLanguage);
+
+                    App._main_view_model.translatedText = await Translation.OnlineGoogleTranslation(App._main_view_model.recognizedText, SelectedItem.LanguageTag);
                 }
             );
 
@@ -139,13 +150,15 @@ namespace toramado
             get { return UwpOcrEngine.TryCreateFromUserProfileLanguages().RecognizerLanguage.LanguageTag; }
         }
 
-        private static object _selected_item;
-        public object SelectedItem
+        private static UwpLanguage _selectedItem;
+        public UwpLanguage SelectedItem
         {
-            get { return _selected_item; }
+            get { return _selectedItem; }
             set
             {
-                _selected_item = value;
+                _selectedItem = value;
+                Info = _selectedItem.LanguageTag;
+
                 OnPropertyChanged();
             }
         }
@@ -162,6 +175,7 @@ namespace toramado
             set
             {
                 _info = value;
+
                 OnPropertyChanged();
             }
         }

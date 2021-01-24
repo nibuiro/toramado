@@ -23,34 +23,48 @@ using System.Windows.Input;
 
 namespace toramado
 {
+    /// <summary>
+    /// エントリ・ポイント・クラス（翻訳ウィンドウについてのロジック）
+    /// </summary>
     public class MainViewModel : INotifyPropertyChanged
     {
+        /// <summary>
+        /// メイン・エントリ・ポイント
+        /// </summary>
         public MainViewModel()
         {
             TranslationCommand = new ReturnableAsyncCommand(
                 async () => {
-                    TranslatedText = await Translation.OnlineGoogleTranslation(OCRedText);
+                    translatedText = await Translation.OnlineGoogleTranslation(recognizedText);
                 }
             );
         }
 
         #region Propaty - OCRed Text
-        private string _ocred_text = "Captured Text will display here."; //クラス内インターフェイス
-        public string OCRedText //外部（インスタンス）インターフェイス
+        private string _recognized_text = "Captured Text will display here.\n（日本語の文字認識エンジンにおいても英字の認識は可能ですが要求を満たせない恐れがあります.）"; 
+
+        /// <summary>
+        /// 認識されたテキストの保持／表示プロパティ
+        /// </summary>
+        public string recognizedText
         {
-            get { return _ocred_text; }
+            get { return _recognized_text; }
             set
             {
-                if (_ocred_text == value) return;
-                _ocred_text = value;
+                if (_recognized_text == value) return;
+                _recognized_text = value;
                 OnPropertyChanged();
             }
         }
         #endregion
 
         #region Propaty - Translated Text
-        private string _translated_text = "翻訳された文章はここに表示されます。"; //クラス内インターフェイス
-        public string TranslatedText //外部（インスタンス）インターフェイス
+        private string _translated_text = "翻訳された文章はここに表示されます。";
+
+        /// <summary>
+        /// 翻訳されたテキストの保持／表示プロパティ
+        /// </summary>
+        public string translatedText 
         {
             get { return _translated_text; }
             set
@@ -64,12 +78,6 @@ namespace toramado
 
         #region TranslationCommandSet
         public IAsyncCommand TranslationCommand { get; private set; }
-        public string TranslationText { get; set; } = "Translate";
-        public string TranslationGestureText
-        {
-            get { return TranslationGesture.GetDisplayStringForCulture(CultureInfo.CurrentUICulture); }
-        }
-        public KeyGesture TranslationGesture { get; set; } = new KeyGesture(Key.T, ModifierKeys.Control);
         #endregion
         
 
