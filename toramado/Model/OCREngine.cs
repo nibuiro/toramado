@@ -45,19 +45,28 @@ using UwpDataWriter = Windows.Storage.Streams.DataWriter;
 /// </summary>
 class OCR
 {
+
+    UwpLanguage currentLanguageCode = null;
+    UwpOcrEngine ocrEngine;
+
     /// <summary>
     /// WindowsのOCRエンジンによる文字認識及び, 後処理を実行
     /// </summary>
     /// <param name="softwareBitmap">ビットマップ</param>
     /// <param name="languageCode">言語コード</param>
     /// <returns>テキスト</returns>
-    public static async Task<string> UwpOcrEngineWithPostProcessing(SoftwareBitmap softwareBitmap, UwpLanguage languageCode)
+    public async Task<string> UwpOcrEngineWithPostProcessing(SoftwareBitmap softwareBitmap, UwpLanguage languageCode)
     {
         string resultText = string.Empty;
-        var ocrEngine = UwpOcrEngine.TryCreateFromLanguage(languageCode);
+        
 
-        UwpOcrResult ocrResult = 
-            await ocrEngine.RecognizeAsync(softwareBitmap);
+        if (this.currentLanguageCode != languageCode)
+        {
+            this.ocrEngine = UwpOcrEngine.TryCreateFromLanguage(languageCode);
+        }
+        
+
+        UwpOcrResult ocrResult = await ocrEngine.RecognizeAsync(softwareBitmap);
 
         foreach (var ocrLine in ocrResult.Lines)
             resultText += (ocrLine.Text + " ");

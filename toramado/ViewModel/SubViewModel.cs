@@ -53,34 +53,18 @@ namespace toramado
         public delegate void GetWindowPositionDelegate(out int left, out int top, out int height, out int width);
         public GetWindowPositionDelegate GetWindowPosition;
         private SoftwareBitmap capturedImage;
+        private OCR ocrCollection = new OCR();
+        private DispatcherTimer _timer;
 
         /// <summary>
         /// サブ（メイン2）・エントリ・ポイント
         /// </summary>
         public SubViewModel()
         {
-            ScreenOCRCommand = new ReturnableAsyncCommand(
-                async () => 
-                {
-                    if (null == _selectedItem) {
-                        Info = "検出言語を選択してください";
+            SetupTimer();
 
-                        return;
-                    }
 
-                    GetWindowPosition(out int left, out int top, out int height, out int width);
-
-                    capturedImage = await Capture.CaptureAsSoftwareBitmap(
-                        (int)(left),
-                        (int)(top),
-                        (int)(height - 20), //メニューバー分を引いている
-                        (int)(width)
-                    );
-
-                    App._main_view_model.recognizedText = await OCR.UwpOcrEngineWithPostProcessing(capturedImage, SelectedItem as UwpLanguage);
-                }
-            );
-
+            //文字認識及び翻訳を実行
             QuickTranslationCommand = new ReturnableAsyncCommand(
                 async () =>
                 {
@@ -99,24 +83,74 @@ namespace toramado
                         (int)(width)
                     );
 
-                    App._main_view_model.recognizedText = await OCR.UwpOcrEngineWithPostProcessing(capturedImage, SelectedItem as UwpLanguage);
+                    App._main_view_model.recognizedText = await ocrCollection.UwpOcrEngineWithPostProcessing(capturedImage, SelectedItem as UwpLanguage);
 
                     App._main_view_model.translatedText = await Translation.OnlineGoogleTranslation(App._main_view_model.recognizedText, SelectedItem.LanguageTag);
                 }
             );
 
         }
-        
 
-        #region ScreenOCRCommandSet
-        public IAsyncCommand ScreenOCRCommand { get; private set; }
-        public string ScreenOCR_Text { get; set; } = "ScreenOCR";
-        public string ScreenOCR_GestureText
+        /// <summary>
+        /// イベント用文字認識メソッド
+        /// </summary>
+        private async void PreprocessingAndScreenOCR(object sender, EventArgs e)
         {
-            get { return ScreenOCR_Gesture.GetDisplayStringForCulture(CultureInfo.CurrentUICulture); }
+            if (null == _selectedItem)
+            {
+                Info = "検出言語を選択してください";
+            } 
+            else 
+            {
+
+                GetWindowPosition(out int left, out int top, out int height, out int width);
+
+                capturedImage = await Capture.CaptureAsSoftwareBitmap(
+                    (int)(left),
+                    (int)(top),
+                    (int)(height - 20), //メニューバー分を引いている
+                    (int)(width)
+                );
+
+                App._main_view_model.recognizedText = await ocrCollection.UwpOcrEngineWithPostProcessing(capturedImage, SelectedItem as UwpLanguage);
+
+            }
         }
-        public KeyGesture ScreenOCR_Gesture { get; set; } = new KeyGesture(Key.K, ModifierKeys.Control);
-        #endregion
+
+
+        /// <summary>
+        /// 定期実行処理を登録
+        /// </summary>
+        private void SetupTimer()
+        {
+            // タイマのインスタンスを生成
+            _timer = new DispatcherTimer(); // 優先度はDispatcherPriority.Background
+                                            // インターバルを設定
+            _timer.Interval = new TimeSpan(0, 0, 1);
+            // タイマメソッドを設定
+            _timer.Tick += new EventHandler(PreprocessingAndScreenOCR);
+            // タイマを開始
+            _timer.Start();
+        }
+
+        /// <summary>
+        /// 定期実行処理の解除
+        /// </summary>
+        private void StopTimer()
+        {
+            _timer.Stop();
+        }
+
+
+        /// <summary>
+        /// 定期実行処理の解除をウィンドウ不在によるエラー回避のため行う
+        /// </summary>
+        public void OnWindowClosing(object sender, CancelEventArgs e)
+        {
+            StopTimer();
+        }
+
+
 
 
         #region QuickTranslationCommandSet

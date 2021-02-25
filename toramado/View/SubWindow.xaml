@@ -154,8 +154,6 @@
                     </VisualBrush>
                 </Menu.Background>
                 <MenuItem Background="Transparent" Width="24" Height="24" Template="{DynamicResource MenuItemControlTemplate1}" Foreground="White" >
-                    <MenuItem Style="{Binding Path=InnerMenuItemStyle}" InputGestureText="{Binding ScreenOCR_GestureText}" 
-                              Header="{Binding ScreenOCR_Text}" Command="{Binding ScreenOCRCommand}" />
                     <MenuItem Style="{Binding Path=InnerMenuItemStyle}" InputGestureText="{Binding QuickTranslationGestureText}" 
                               Header="{Binding QuickTranslationText}" Command="{Binding QuickTranslationCommand}" />
                     <Separator />

@@ -54,6 +54,10 @@ namespace toramado
 
             this.Loaded += SubWindow_Loaded;
             this.Topmost = true;
+
+
+            // 画面が閉じられるときに、タイマを停止
+            Closing += App._sub_view_model.OnWindowClosing;
         }
 
         private void SubWindow_Loaded(object sender, RoutedEventArgs ea)
